@@ -1,6 +1,7 @@
 from lxml import html
 import csv
 import requests
+import re
 
 TMDB_BASE_URL = "https://www.themoviedb.org"
 TMDB_TOP_URL_1 = "https://www.themoviedb.org/movie/top-rated"
@@ -24,6 +25,26 @@ def save_all_movies(all_movie_info):
                              "电影简介": movie_info.get("电影简介"),
                              "电影 slogan": movie_info.get("电影 slogan")
                              })
+
+
+def get_movie_year(movie_years):
+    movie_year = movie_years[0].strip() if movie_years else ""
+    return movie_year.replace("(", "").replace(")", "")
+
+
+def get_movie_publish_date(movie_dates):
+    movie_date = movie_dates[0].strip() if movie_dates else ""
+    return re.search(r"\d{4}-\d{2}-\d{2}", movie_date)
+
+
+def get_movie_cost_time(movie_cost_times):
+    movie_cost_time = movie_cost_times[0].strip() if movie_cost_times else ""
+    h_res = re.search(r"(\d+)h", movie_cost_time)
+    m_res = re.search(r"(\d+)m", movie_cost_time)
+    h = int(h_res.group(1)) if h_res else 0
+    m = int(m_res.group(1)) if m_res else 0
+    return h * 60 + m
+
 
 def get_movie_info(movie_info_url):
     document = requests.get(movie_info_url)
@@ -55,10 +76,10 @@ def get_movie_info(movie_info_url):
     movie_info = {
         # strip（）去掉字符串首尾的所有空白字符(包括空格、\n、\t、\r 等)
         "电影名": movie_name[0].strip() if movie_name else "",
-        "上映年份": movie_years[0].strip() if movie_years else "",
-        "上映时间": movie_dates[0].strip() if movie_dates else "",
+        "上映年份": get_movie_year(movie_years),
+        "上映时间": get_movie_publish_date(movie_dates),
         "电影标签": movie_tags[0].strip() if movie_tags else "",
-        "电影时长": movie_cost_times[0].strip() if movie_cost_times else "",
+        "电影时长": get_movie_cost_time(movie_cost_times),
         "电影评分": movie_scores[0].strip() if movie_scores else "",
         "电影语言": movie_languages[0].strip() if movie_languages else "",
         "导演": movie_directors[0].strip() if movie_directors else "",
